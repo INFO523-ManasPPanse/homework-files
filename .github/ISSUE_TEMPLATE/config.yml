@@ -1,0 +1,11 @@
+# Allowing Creation of Blank Issues
+blank_issues_enabled: true
+
+# Template
+templates:
+  - name: "Instructor HW 01 Review"
+    about: "Please use this template to review homework 01."
+    filename: "instructor_homework01_review.md"
+  - name: "Instructor HW 02 Review"
+    about: "Please use this template to review homework 01."
+    filename: "instructor_homework02_review.md"

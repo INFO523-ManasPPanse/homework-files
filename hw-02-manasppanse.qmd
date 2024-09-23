@@ -1,0 +1,319 @@
+---
+title: "Exploratory Data Analysis & Data Pre-Processing"
+author:
+  - name: "Manas P Panse"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# 0 - Pre-Checks
+
+```{python}
+#| label: python-version
+
+# Checking Python Version
+
+!python --version
+```
+
+```{python}
+#| label: import-libraries
+
+# Importing Necessary Libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+import scipy.stats as stats
+```
+
+```{python}
+#| label: import-dataset
+
+# Importing Dataset
+
+songs_df = pd.read_csv("data/hw-02/taylor_album_songs.csv")
+```
+
+# 1 - Exploratory Data Analysis
+
+## Task 1 - Data Overview (1 Cr.)
+
+```{python}
+#| label: data-overview
+
+songs_df.info()
+```
+
+### Shape
+
+The dataset contains **194** ROWS and **29** COLUMNS.
+
+### Columns
+
+1.  Categorical Columns : `album_name`, `ep`, `album_release`, `track_name`, `artist`, `featuring`, `bonus_track`, `promotional_release`, `single_release`, `track_release`, `explicit`, `key_name`, `mode_name`, `key_mode`.
+
+2.  Numerical Columns : `track_number`, `danceability`, `energy`, `key`, `loudness`, `mode`, `speechiness`, `acousticness`, `instrumentalness`, `liveness`, `valence`, `tempo`, `time_signature`, `duration_ms`, `lyrics`.
+
+### DataTypes
+
+1.  `object` : 12 columns.
+2.  `bool` : 02 columns.
+3.  `int64` : 01 column.
+4.  `float64` : 14 columns.
+
+### Descriptive Statistics
+
+```{python}
+#| label: descriptive-statistics
+
+songs_df.describe()
+```
+
+## Task 2 - Univariate Analysis (1 Cr.)
+
+```{python}
+#| label: column-separation
+
+# Numerical Columns
+numeric_cols = songs_df.select_dtypes(include=['float64', 'int64']).columns
+
+# Categorical Columns
+categoric_cols = songs_df.select_dtypes(include=['object', 'bool']).columns
+```
+
+### Numeric Columns Plot
+
+```{python}
+#| label: numeric-plot
+
+plt.figure(figsize = (15, 12))
+for i, column in enumerate(numeric_cols, 1):
+  plt.subplot(4, 4, i)
+  sns.histplot(songs_df[column], kde = True)
+  plt.title(f'Histogram of {column}')
+  plt.xlabel(column)
+  plt.ylabel('Frequency')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Categoric Columns Plot
+
+```{python}
+#| label: categoric-plot
+
+plt.figure(figsize = (15, 12))
+for i, column in enumerate(categoric_cols, 1):
+  plt.subplot(4, 4, i)
+  sns.histplot(songs_df[column], kde = True)
+  plt.title(f'Histogram of {column}')
+  plt.xlabel(column)
+  plt.ylabel('Frequency')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Task 3 - Bivariate Analysis (1 Cr.)
+
+### Danceability vs Energy
+
+```{python}
+#| label: dance-energy-plot
+
+plt.figure(figsize = (8, 6))
+sns.scatterplot(x = "danceability", y = "energy", data = songs_df, hue = "album_name")
+plt.title("Danceability vs Energy", pad = 50)
+plt.legend(title = "Album", loc = 'upper center', bbox_to_anchor = (0.5, 1.15), fontsize = "small", ncol = 5)
+plt.tight_layout()
+plt.show()
+```
+
+### Loudness vs Acousticness
+
+```{python}
+#| label: loud-acoustic-plot
+
+plt.figure(figsize = (8, 6))
+sns.scatterplot(x = "loudness", y = "acousticness", data = songs_df, hue = "album_name")
+plt.title("Loudness vs Acousticness", pad = 50)
+plt.legend(title = "Album", loc = 'upper center', bbox_to_anchor = (0.5, 1.15), fontsize = "small", ncol = 5)
+plt.tight_layout()
+plt.show()
+```
+
+### Valence vs Tempo
+
+```{python}
+#| label: valence-tempo-plot
+
+plt.figure(figsize = (8, 6))
+sns.scatterplot(x = "valence", y = "tempo", data = songs_df, hue = "album_name")
+plt.title("Valence vs Tempo", pad = 50)
+plt.legend(title = "Album", loc = 'upper center', bbox_to_anchor = (0.5, 1.15), fontsize = "small", ncol = 5)
+plt.tight_layout()
+plt.show()
+```
+
+## Task 4 - Missing Data & Outliers (1 Cr.)
+
+### Null Values
+
+```{python}
+#| label: finding-null-values
+
+songs_df.isnull().sum()
+```
+
+Columns with NULLs : `artist`, `featuring`, `promotional_release`, `single_release`, `danceability`, `energy`, `key`, `loudness`, `mode`, `speechiness`, `acousticness`, `instrumentalness`, `liveness`, `valence`, `tempo`, `time_signature`, `duration_ms`, `lyrics`.
+
+### Outlier Detection
+
+```{python}
+#|label: outliers-iqr
+
+def find_outliers(df, column):
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    return df[(df[column] < lower_bound) | (df[column] > upper_bound)]
+
+outliers_count = {col: len(find_outliers(songs_df, col)) for col in numeric_cols}
+print("Total Outliers for each Numerical Column :\n", outliers_count)
+```
+
+# 2 - Data Pre-Processing
+
+## Task 5 - Handling Missing Values (1 Cr.)
+
+```{python}
+#| label: median-numeric-cols
+
+for col in numeric_cols:
+    songs_df[col].fillna(songs_df[col].median(), inplace = True)
+```
+
+```{python}
+#| label: mode-categoric-cols
+
+for col in categoric_cols:
+    songs_df[col].fillna(songs_df[col].mode().iloc[0], inplace = True)
+```
+
+```{python}
+#| label: imputation-check
+
+songs_df.isnull().sum()
+```
+
+## Task 6 - Dealing with Outliers (1 Cr.)
+
+```{python}
+#| label: pre-capping
+
+plt.figure(figsize = (8, 6))
+sns.kdeplot(songs_df['danceability'], shade = True)
+plt.title('Density Plot of Danceability Before Capping')
+plt.show()
+```
+
+```{python}
+#| label: capping-plot
+
+task6_lb = songs_df['danceability'].quantile(0.10) # Cutoff at 10th
+task6_ub = songs_df['danceability'].quantile(0.90) # Cutoff at 90th
+
+songs_df['danceability'] = songs_df['danceability'].clip(lower = task6_lb, upper = task6_ub)
+
+# Visualizing the Effect of Capping
+plt.figure(figsize = (8, 6))
+sns.kdeplot(songs_df['danceability'], shade = True)
+plt.title('Density Plot of Danceability After Capping')
+plt.show()
+```
+
+## Task 7 - Feature Engineering (1 Cr.)
+
+```{python}
+#| label: new-feature
+
+songs_df['valence_tempo_ratio'] = songs_df['valence'] / songs_df['tempo']
+
+print(songs_df[['track_name', 'valence', 'tempo', 'valence_tempo_ratio']].head())
+```
+
+## Task 8 - Data Transformation (1 Cr.)
+
+### Z - Score Normalization
+
+```{python}
+#| label: zscore-norm
+
+# Z-Score Normalization
+scaler = StandardScaler()
+songs_df['tempo_zscore'] = scaler.fit_transform(songs_df[['tempo']])
+
+# Transformation Check
+songs_df['tempo_zscore'].describe()
+```
+
+### Transformation for Skewness
+
+```{python}
+#| label: density-qq-before-plots
+
+# Density Plot
+plt.figure(figsize = (8, 6))
+sns.kdeplot(songs_df['loudness'], shade = True)
+plt.title('Density Plot of Loudness Before Transformation')
+plt.show()
+
+# Q-Q Plot
+plt.figure(figsize = (8, 6))
+stats.probplot(songs_df['loudness'], dist = "norm", plot = plt)
+plt.title('Q-Q Plot of Loudness Before Transformation')
+plt.show()
+```
+
+```{python}
+#| label: log-transform
+
+# Applying Log Transformation to Correct Skewness
+songs_df['loudness_log'] = np.log1p(songs_df['loudness'] - songs_df['loudness'].min() + 1)
+```
+
+```{python}
+#| label: density-qq-after-plots
+
+# Density Plot
+plt.figure(figsize = (8, 6))
+sns.kdeplot(songs_df['loudness_log'], shade = True)
+plt.title('Density Plot of Loudness (After Log Transformation)')
+plt.show()
+
+# Q-Q Plot
+plt.figure(figsize = (8, 6))
+stats.probplot(songs_df['loudness_log'], dist = "norm", plot = plt)
+plt.title('Q-Q Plot of Loudness (After Log Transformation)')
+plt.show()
+```
+
+# 3 - Declaration of Independent Work
+
+See **HOMEPAGE** for details

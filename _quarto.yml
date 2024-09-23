@@ -1,0 +1,23 @@
+project: 
+  type: website
+  
+website: 
+  title: "Homework Files"
+  navbar:
+    right: 
+      - icon: github
+        href: https://github.com/INFO523-ManasPPanse/homework-files
+    left: 
+      - text: "HW-01"
+        href: hw-01-manasppanse.qmd
+      - text: "HW-02"
+        href: hw-02-manasppanse.qmd
+format:
+  html:
+    theme: lux
+toc: true
+execute: 
+  error: false
+  message: false
+  warning: false
+  freeze: auto

@@ -1,0 +1,223 @@
+---
+title: "Python & NumPy Basics"
+author:
+  - name: "Manas P Panse"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# 0 - Pre-Checks
+
+```{python}
+# Checking Python Version
+
+!python --version
+```
+
+# 1 - Python Basics
+
+## Task 1 - Variables & Type (1 Cr.)
+
+1.  Define two variables: an integer named `age` with a value of 25 and a string named `course` with the value "Data Mining".
+
+2.  Print their values and types using the `print()` and the `type()` function.
+
+```{python}
+# Defining Variables
+age = 25
+course = "Data Mining"
+
+# Printing Values & Types
+print("Value of 'age' Variable :", age)
+print("Type of 'age' Variable :", type(age))
+
+print("\nValue of 'course' Variable :", course)
+print("Type of 'course' Variable :", type(course))
+```
+
+## Task 2 - Control Structures (2 Cr.)
+
+1.  Write a function `is_prime(num)` that takes an integer and returns True if the number is a prime number, False otherwise.
+
+2.  Make sure you include a loop and an appropriate control flow statement to check for primality.
+
+```{python}
+# Defining the Function
+def is_prime(num):
+    if num <= 1:
+        return False
+    for i in range(2, int(num ** 0.5) + 1):
+        if num % i == 0:
+            return False
+    return True
+
+# Testing
+print(is_prime(1))
+print(is_prime(2))
+```
+
+## Task 3 - Data Structures (2 Cr.)
+
+1.  Create a dictionary named `student_grades` with keys as student names and values as their grades (A, B, C, D, F).
+
+2.  Write a loop to print out each student’s name and grade in the format: "Student [Name] has grade [Grade]".
+
+```{python}
+# Creating a Dictionary named student_grades
+student_grades = {
+    'Manas': 'A',
+    'Bob': 'B',
+    'Jack': 'C',
+    'Mark': 'D',
+    'Wade': 'F'
+}
+
+# Looping a Print statement in the given format
+for name, grade in student_grades.items():
+    print(f"Student {name} has grade {grade}")
+```
+
+# 2 - NumPy Introduction
+
+```{python}
+# Importing NumPy library
+import numpy as np
+```
+
+## Task 4 - NumPy Arrays (1 Cr.)
+
+1.  Create a NumPy array `A` of shape (10,10) with values ranging from 0 to 99.
+
+2.  Calculate the determinant of matrix `A` (use `numpy.linalg.det`). Print the result.
+
+```{python}
+# Creating the NumPy array `A`
+A = [
+  [47, 25,  8, 14, 61, 30, 87, 56,  9, 92],
+  [ 7, 66, 95, 42, 34, 77, 18, 54,  0, 81],
+  [38, 73, 64, 25,  5, 90, 16, 43, 57, 28],
+  [21, 50,  3, 87, 64, 29, 79, 94, 67, 41],
+  [ 4, 22, 18, 31, 96, 45, 72, 35, 60,  7],
+  [89, 62,  1, 74, 13, 68, 88, 27, 50, 12],
+  [76, 82,  5, 49, 53, 85, 33,  4, 24, 97],
+  [31,  6, 92, 78,  9, 46, 70, 19,  2, 83],
+  [65, 93, 28, 71, 40, 56,  7, 95, 82, 19],
+  [44, 91, 13, 52, 59, 37, 48,  6, 20, 85]
+]
+
+# Calculating the Determinant
+determinant = np.linalg.det(A)
+
+# Printing Result
+print(f"Determinant of the matrix A ( Δ ) : {determinant}")
+```
+
+## Task 5 - Iterate over Elements (2 Cr.)
+
+1.  Tract and print all the elements from the third column of a given 2D NumPy array.
+
+2.  Use a for loop to iterate through each element of this column and print their square roots.
+
+Given Code -
+
+```
+import numpy as np
+
+# Assuming a 2D array example
+array_2D = np.random.randint(1, 100, size=(5, 5))
+
+# complete the rest of codes here...
+```
+
+```{python}
+# Creating a 2D Array
+array_2D = np.random.randint(1, 100, size=(5, 5))
+
+# Printing the Original Array
+print("Original 2D Array : ")
+print(array_2D)
+
+# Extracting the 3rd Column
+third_column = array_2D[:, 2]
+
+# Printing the 3rd Column
+print("\nThird Column of the Array :")
+print(third_column)
+
+# Iterating through each Element of the 3rd Column and Printing their Square Roots
+print("\nSquare Roots of the Third Column Elements :")
+for element in third_column:
+    print(np.sqrt(element))
+```
+
+## Task 6: Statistics with NumPy (2 Cr.)
+
+1.  Given a 2D NumPy array, calculate the mean, median, and variance along both rows and columns.
+
+2.  Identify the row with the maximum variance and print it out.
+
+```{python}
+# Saving Timg and Borrowing the original 2D array from TASK 5
+print("Original 2D Array :")
+print(array_2D)
+```
+
+```{python}
+# Calculating Mean along Columns (axis = 0)
+mean_columns = np.mean(array_2D, axis=0)
+print("Mean along Columns :")
+print(mean_columns)
+
+# Calculating Mean along Rows (axis = 1)
+mean_rows = np.mean(array_2D, axis=1)
+print("\nMean along Rows :")
+print(mean_rows)
+```
+
+```{python}
+# Median along Columns (axis = 0)
+median_columns = np.median(array_2D, axis=0)
+print("Median along Columns :")
+print(median_columns)
+
+# Median along Rows (axis = 1)
+median_rows = np.median(array_2D, axis=1)
+print("\nMedian along Rows :")
+print(median_rows)
+```
+
+```{python}
+# Variance along columns (axis=0)
+variance_columns = np.var(array_2D, axis=0)
+print("Variance along Columns :")
+print(variance_columns)
+
+# Variance along rows (axis=1)
+variance_rows = np.var(array_2D, axis=1)
+print("\nVariance along Rows :")
+print(variance_rows)
+```
+
+```{python}
+# Identifying the Row with the MAXIMUM Variance
+max_variance_row_index = np.argmax(variance_rows)
+max_variance_row = array_2D[max_variance_row_index]
+
+# Print the Row with the MAXIMUM Variance
+print("Row with the MAX Variance :")
+print(max_variance_row)
+```
+
+# 3 - Declaration of Independent Work
+
+See **HOMEPAGE** for details

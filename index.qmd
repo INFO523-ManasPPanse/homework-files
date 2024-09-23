@@ -1,0 +1,69 @@
+---
+title: "Common Rules Across HWs"
+author:
+  - name: "Dr. Liangming Pan"
+    affiliation: "College of Information Science, University of Arizona"
+  - name: "Manas P Panse - Student & Signatory"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-fold: true
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# Instructions
+
+1.  For any exercise where you’re writing code, write your codes in the empty code chunk. You are also allowed to add additional code chunks when needed.
+2.  For any exercise where you’re creating a plot, make sure to label all axes, legends, etc. and give it an informative title.
+3.  For any exercise where you’re including a description and/or interpretation, use full sentences.
+
+# Homework Submission Demo
+
+There is a 7-min homework submission demo avaliable at Content \> Week 2. Please watch the video if you are unsure how to complete the homework.
+
+# Policies
+
+1.  **Sharing / Reusing Code Policy** : Unless explicitly stated otherwise, this course’s policy is that you may make use of any online resources (e.g. RStudio Community, StackOverflow, etc.) but you must explicitly cite where you obtained any code you directly use or use as inspiration in your solution(s). Any recycled code that is discovered and is not explicitly cited will be treated as plagiarism, regardless of source.
+
+2.  **Late Submission Policy** :
+
+    -   Late, but next day (before noon): -10% of available points.
+
+    -   Late, but next day (after noon): -20% of available points.
+
+    -   Two days late or later: No credit
+
+3.  **Declaration of Independent Work** : You must acknowledge that your submitted Assessment is your independent work, by putting your name and date at the end of the "Declaration of Independent Work" section.
+
+# Total Credits
+
+| Sr. No | Homework Name | Available Credits |
+|--------|---------------|-------------------|
+| 01     | HW-01         | 10                |
+| 02     | HW-02         | 10                |
+
+# Submission DDL
+
+| Sr. No | Homework Name | DDL                                         |
+|--------|---------------|---------------------------------------------|
+| 01     | HW-01         | Sep-09 12:01 AM The first minute of Week 3. |
+| 02     | HW-02         | Sep-23 12:01 AM The first minute of Week 5. |
+
+# Declaration of Independent Work
+
+I hereby declare that this assignment is entirely my own work and that I have neither given nor received unauthorized assistance in completing it. I have adhered to all the guidelines provided for this assignment and have cited all sources from which I derived data, ideas, or words, whether quoted directly or paraphrased.
+
+Furthermore, I understand that providing false declaration is a violation of the University of Arizona's honor code and will result in appropriate disciplinary action consistent with the severity of the violation.
+
+| Sr. No | Homework Name | Date            | Signature     |
+|--------|---------------|-----------------|---------------|
+| 01     | HW-01         | Sept 08th, 2024 | Manas P Panse |
+| 02     | HW-02         | Sept 22th, 2024 | Manas P Panse |

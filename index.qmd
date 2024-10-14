@@ -49,6 +49,7 @@ There is a 7-min homework submission demo avaliable at Content \> Week 2. Please
 |--------|---------------|-------------------|
 | 01     | HW-01         | 10                |
 | 02     | HW-02         | 10                |
+| 03     | HW-03         | 10                |
 
 # Submission DDL
 
@@ -56,6 +57,7 @@ There is a 7-min homework submission demo avaliable at Content \> Week 2. Please
 |--------|---------------|---------------------------------------------|
 | 01     | HW-01         | Sep-09 12:01 AM The first minute of Week 3. |
 | 02     | HW-02         | Sep-23 12:01 AM The first minute of Week 5. |
+| 03     | HW-03         | Oct-13 23:59 PM The last minute of Week 7.  |
 
 # Declaration of Independent Work
 
@@ -67,3 +69,4 @@ Furthermore, I understand that providing false declaration is a violation of the
 |--------|---------------|-----------------|---------------|
 | 01     | HW-01         | Sept 08th, 2024 | Manas P Panse |
 | 02     | HW-02         | Sept 22th, 2024 | Manas P Panse |
+| 03     | HW-03         | Octo 13th, 2024 | Manas P Panse |

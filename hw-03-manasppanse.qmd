@@ -1,0 +1,293 @@
+---
+title: "Classification & Model Evaluation"
+author:
+  - name: "Manas P Panse"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# 0 - Pre-Checks
+
+```{python}
+#| label: python-version
+
+# Checking Python Version
+
+!python --version
+```
+
+```{python}
+#| label: import-libraries
+
+# Importing Necessary Libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, f1_score, make_scorer
+from sklearn.metrics import precision_score, recall_score, roc_auc_score
+from sklearn.model_selection import cross_validate, cross_val_score, StratifiedKFold, train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+```
+
+```{python}
+#| label: import-dataset
+
+# Importing Dataset
+
+costs_df = pd.read_csv("data/hw-03/childcare_costs.csv")
+```
+
+# 1 - Data Preparation and Exploration
+
+## Task 1 - Exploratory Data Analysis (1 Cr.)
+
+### Data Overview
+
+```{python}
+#| label: eda
+
+costs_df.info()
+```
+
+#### Shape
+
+The dataset contains **23341** ROWS and **64** COLUMNS.
+
+#### Columns
+
+1.  Categorical Columns : `country_name`, `state_name`, `state_abbreviation`.
+2.  Numerical Columns : `county_fips_code`, `study_year`, `one_race`, etc.
+( I am not going to type out all those columns. )
+
+#### DataTypes
+
+1.  `int64` : 10 column.
+2.  `float64` : 51 columns.
+3.  `object` : 03 columns.
+
+### Descriptive Statistics
+
+```{python}
+#| label: eda-desc-stats
+
+costs_df.describe()
+```
+
+### Column Separations for Future Use
+
+```{python}
+#| label: eda-column-separate
+
+# Numerical Columns
+numeric_cols = costs_df.select_dtypes(include = ['float64', 'int64']).columns
+
+# Categorical Columns
+categoric_cols = costs_df.select_dtypes(include = ['object']).columns
+```
+
+## Task 2 - Data Preprocessing (1 Cr.)
+
+### Label Encoding
+
+```{python}
+#| label: label-encoding
+
+for col in categoric_cols:
+    le = LabelEncoder()
+    costs_df[col] = le.fit_transform(costs_df[col])
+
+costs_df.head()
+```
+
+# 2 - Feature Engineering and Selection
+
+## Task 3 - Feature Engineering (1 Cr.)
+
+```{python}
+#| label: feature-eng
+
+# Grouping DF by 'state_name' & Calculating the Average 'mc_preschool' for Each State
+state_avg = costs_df.groupby('state_name')['mc_preschool'].mean().reset_index()
+state_avg.columns = ['state_name', 'avg_mc_preschool']
+
+# Merging the 'state_avg' with the OG DF
+costs_df = costs_df.merge(state_avg, on = 'state_name')
+
+# Creating the 'above_state_avg' column (CONDITION : 1 if 'mc_preschool' is above 'state_avg', OTHERWISE 0
+costs_df['above_state_avg'] = costs_df['mc_preschool'] > costs_df['avg_mc_preschool'].astype(int)
+
+# Dropping the now unneccessary 'avg_mc_preschool' column
+costs_df = costs_df.drop(columns = ['avg_mc_preschool'])
+
+costs_df.head()
+```
+
+## Task 4 - Feature Selection (1 Cr.)
+
+```{python}
+#| label: corr-matrix
+
+corr_matrix = costs_df[numeric_cols].corr()
+```
+
+### Heatmap of Numeric Features
+
+```{python}
+#| label: numeric-heatmap
+
+plt.figure(figsize = (8, 6))
+sns.heatmap(corr_matrix)
+plt.title("Correlation Heatmap of Numerical Features")
+plt.show()
+```
+
+### Highly Correlated Features
+
+```{python}
+#| label: highly-correlated
+
+threshold = 0.8
+high_corr_pairs = corr_matrix.abs().unstack().sort_values(ascending = False).drop_duplicates()
+high_corr_pairs = high_corr_pairs[high_corr_pairs > threshold]
+
+high_corr_pairs
+```
+
+# 3 - Model Implementation
+
+## Task 5 - Data Splitting (1 Cr.)
+
+```{python}
+#| label: dataset-split
+
+# Defining Features and Target
+x = costs_df.drop(columns = ['above_state_avg'])
+y = costs_df['above_state_avg']
+
+# Dataset Split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 42)
+
+# Displaying Shapes of Datasets
+print(f'x_train Shape : {x_train.shape}')
+print(f'X_test Shape : {x_test.shape}')
+print(f'y_train Shape : {y_train.shape}')
+print(f'y_test Shape : {y_test.shape}')
+```
+
+## Task 6 - Model Training (1 Cr.)
+
+### Logistic Regression
+
+```{python}
+#| label: logic-reg
+
+log_reg = LogisticRegression(max_iter = 1000)
+log_reg.fit(x_train, y_train)
+y_pred_log_reg = log_reg.predict(x_test)
+log_reg_acc = accuracy_score(y_test, y_pred_log_reg)
+print(f'Logistic Regression Accuracy : {log_reg_acc:.4f}')
+```
+
+### Decision Tree Classifier
+
+```{python}
+#| label: deci-tree-class
+
+tree_clf = DecisionTreeClassifier(random_state = 42)
+tree_clf.fit(x_train, y_train)
+y_pred_tree = tree_clf.predict(x_test)
+tree_acc = accuracy_score(y_test, y_pred_tree)
+print(f'Decision Tree Accuracy : {tree_acc:.4f}')
+```
+
+### Random Forest Classifier
+
+```{python}
+#| label: ran-forest-class
+
+forest_clf = RandomForestClassifier(random_state = 42)
+forest_clf.fit(x_train, y_train)
+y_pred_forest = forest_clf.predict(x_test)
+forest_acc = accuracy_score(y_test, y_pred_forest)
+print(f'Random Forest Accuracy : {forest_acc:.4f}')
+```
+
+### K - Nearest Neighbors Classifier
+
+```{python}
+#| label: k-neighbor-class
+
+knn_clf = KNeighborsClassifier(n_neighbors = 5)
+knn_clf.fit(x_train, y_train)
+y_pred_knn = knn_clf.predict(x_test)
+knn_acc = accuracy_score(y_test, y_pred_knn)
+print(f'K-Nearest Neighbors Accuracy : {knn_acc:.4f}')
+```
+
+# 4 - Model Evaluation and Interpretation
+
+## Task 7 - Model Validation (2 Cr.)
+
+```{python}
+#| label: score-cross-val
+
+scoring = {
+    'accuracy': 'accuracy',
+    'precision': make_scorer(precision_score),
+    'recall': make_scorer(recall_score),
+    'f1': make_scorer(f1_score),
+    'roc_auc': make_scorer(roc_auc_score)
+}
+
+# Cross-Validation Function
+def evaluate_model(model, x, y):
+    scores = cross_validate(model, x, y, cv = 5, scoring = scoring)
+    print("‾" * 30)
+    print(f"Model : {model.__class__.__name__}")
+    print(f"Accuracy : {scores['test_accuracy'].mean():.4f}")
+    print(f"Precision : {scores['test_precision'].mean():.4f}")
+    print(f"Recall : {scores['test_recall'].mean():.4f}")
+    print(f"F1-score : {scores['test_f1'].mean():.4f}")
+    print(f"ROC-AUC : {scores['test_roc_auc'].mean():.4f}")
+    print("_" * 30)
+```
+
+```{python}
+#| label: model-validate
+
+log_reg = LogisticRegression(max_iter = 1000)
+evaluate_model(log_reg, x_train, y_train)
+
+tree_clf = DecisionTreeClassifier(random_state = 42)
+evaluate_model(tree_clf, x_train, y_train)
+
+forest_clf = RandomForestClassifier(random_state = 42)
+evaluate_model(forest_clf, x_train, y_train)
+
+knn_clf = KNeighborsClassifier(n_neighbors = 5)
+evaluate_model(knn_clf, x_train, y_train)
+```
+
+## Task 8 - Result Interpretation (1 Cr.)
+
+It's time to reveal the nominees for this assignment's Oscar for Best Performing Model: LogisticRegression, DecisionTreeClassifier, RandomForestClassifier, AND last but not the least KNeighborsClassifier.
+
+And the Oscar goes to ... **RandomForestClassifier**. 

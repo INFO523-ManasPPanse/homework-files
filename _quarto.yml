@@ -8,10 +8,12 @@ website:
       - icon: github
         href: https://github.com/INFO523-ManasPPanse/homework-files
     left: 
-      - text: "HW-01"
+      - text: "HW - 01"
         href: hw-01-manasppanse.qmd
-      - text: "HW-02"
+      - text: "HW - 02"
         href: hw-02-manasppanse.qmd
+      - text: "HW - 03"
+        href: hw-03-manasppanse.qmd
 format:
   html:
     theme: lux

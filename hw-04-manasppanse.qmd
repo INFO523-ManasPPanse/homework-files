@@ -1,0 +1,395 @@
+---
+title: "Regression Models"
+author:
+  - name: "Manas P Panse"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# 0 - Pre-Checks
+
+```{python}
+#| label: python-version
+
+# Checking Python Version
+
+!python --version
+```
+
+```{python}
+#| label: import-libraries
+
+# Importing Necessary Libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LassoCV
+from sklearn.linear_model import RidgeCV
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+
+sns.set(style = "white")
+```
+
+```{python}
+#| label: import-dataset
+
+# Importing Dataset
+
+survival_df = pd.read_csv("data/hw-04/survivalists.csv")
+```
+
+# 1 - Data Preparation and Exploration
+
+## Task 1 - Exploratory Data Analysis (1 Cr.)
+
+### Data Overview
+
+```{python}
+#| label: eda
+
+survival_df.info()
+```
+
+#### Shape
+
+The dataset contains **94** ROWS and **16** COLUMNS.
+
+#### Columns
+
+1.  Categorical Columns : `name`, `gender`, `city`, `state`, `country`, `medically_evacuated`, `reason_tapped_out`, `reason_category`, `team`, `profession`, & `url`.
+2.  Numerical Columns : `season`, `age`, `result`, `days_lasted`, & `day_linked_up`.
+
+\[Going to include the `bool` as a categoric value.\]
+
+#### DataTypes
+
+1.  `int64` : 04 column.
+2.  `object` : 10 columns.
+3.  `bool` : 01 column.
+4.  `float64` : 01 columns.
+
+### Descriptive Statistics
+
+```{python}
+#| label: eda-desc-stats
+
+survival_df.describe()
+```
+
+### Column Separations for Future Use
+
+```{python}
+#| label: eda-column-separate
+
+# Numerical Columns
+numeric_cols = survival_df.select_dtypes(include = ['int64', 'float64']).columns
+
+# Categorical Columns
+categoric_cols = survival_df.select_dtypes(include = ['object', 'bool']).columns
+```
+
+### Distribution of `days_lasted`
+
+```{python}
+#| label: distro-days-lasted
+
+plt.figure(figsize = (8, 6))
+dl = sns.histplot(survival_df['days_lasted'], kde = True, bins = 20, color = 'lime')
+dl.lines[0].set_color('red')
+plt.title('Distribution of Days Lasted')
+plt.xlabel('Days Lasted')
+plt.ylabel('Frequency')
+plt.show()
+```
+
+### Relationship between ...
+
+### `gender` vs `days_lasted`
+
+```{python}
+#| label: gender-days-lasted
+
+plt.figure(figsize = (8, 6))
+sns.boxplot(data = survival_df, x = 'gender', y = 'days_lasted', palette = 'bright')
+plt.title('Days Lasted vs Gender')
+plt.xlabel('Gender')
+plt.ylabel('Days Lasted')
+plt.show()
+```
+
+### `age` vs `days_lasted`
+
+```{python}
+#| label: age-days-lasted
+
+age_bins = pd.cut(survival_df['age'], bins = [20, 30, 40, 50, 60, 70], labels = ["20-30", "30-40", "40-50", "50-60", "60-70"])
+
+plt.figure(figsize = (8, 6))
+sns.boxplot(x = age_bins, y = survival_df['days_lasted'], palette = 'bright')
+# sns.boxplot(x = age_bins, y = survival_df['days_lasted'], palette = 'Paired')
+plt.title('Days Lasted vs Age Group')
+plt.xlabel('Age Group')
+plt.ylabel('Days Lasted')
+plt.show()
+```
+
+# 2 - Data Preprocessing
+
+## Task 2 - Data Cleaning (1 Cr.)
+
+### Handling Missing Values
+
+```{python}
+#| label: pre-check-missing-values
+
+survival_df.isnull().sum()
+```
+
+```{python}
+#| label: correct-missing-values
+
+for col in survival_df.select_dtypes(include = ['int64', 'float64']):
+    survival_df[col].fillna(survival_df[col].median(), inplace = True)
+
+for col in survival_df.select_dtypes(include = ['object', 'bool']):
+    survival_df[col].fillna(survival_df[col].mode()[0], inplace = True)
+```
+
+```{python}
+#| label: check-missing-values
+
+survival_df.isnull().sum()
+```
+
+### Removing Outliers
+
+```{python}
+#| label: outlier-removal
+
+# Calculate IQR for 'days_lasted'
+Q1 = survival_df['days_lasted'].quantile(0.25)
+Q3 = survival_df['days_lasted'].quantile(0.75)
+IQR = Q3 - Q1
+
+# Calculate bounds for detecting outliers
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+# Filter out outliers
+clean_survival_df = survival_df[(survival_df['days_lasted'] >= lower_bound) & (survival_df['days_lasted'] <= upper_bound)]
+
+# Check how many rows were removed
+print(f"Before Rows : {len(survival_df)}")
+print(f"Afterr Rows : {len(clean_survival_df)}")
+```
+
+## Task 3 - Data Transformation (1 Cr.)
+
+### Feature Scaling
+
+```{python}
+#| label: zscore-feature-scale
+
+scaler = StandardScaler()
+
+survival_df[['age', 'days_lasted']] = scaler.fit_transform(survival_df[['age', 'days_lasted']])
+
+survival_df[['age', 'days_lasted']].describe()
+```
+
+### Variable Transformation
+
+```{python}
+#| label: variable-transform
+
+clean_survival_df['days_lasted_log'] = np.log1p(clean_survival_df['days_lasted'] + 1)
+
+clean_survival_df[['days_lasted', 'days_lasted_log']].head()
+```
+
+### Histogram of `days_lasted_log`
+
+```{python}
+#| label: histogram-days-lasted-log
+
+plt.figure(figsize = (8, 6))
+dll = sns.histplot(clean_survival_df['days_lasted_log'], kde = True, bins = 20, color = 'lime')
+dll.lines[0].set_color('red')
+plt.title('Distribution of Log - Transformed Days Lasted')
+plt.xlabel('Log of Days Lasted')
+plt.ylabel('Frequency')
+plt.show()
+```
+
+### The Remaining Processing Steps
+
+```{python}
+#| label: given-processing-steps
+
+# Drop irrelevant columns
+survivalistsRed = clean_survival_df.drop(['name', 'city', 'url', 'profession', 'reason_tapped_out', 'state', 'country', 'reason_category', 'team', 'days_lasted'], axis = 1)
+
+# Label encoding for 'gender'
+survivalistsFinal = pd.get_dummies(survivalistsRed, columns = ['gender'], drop_first = True)
+
+survivalistsFinal['medically_evacuated'] = survivalistsFinal['medically_evacuated'].astype(int)
+survivalistsFinal['gender_Male'] = survivalistsFinal['gender_Male'].astype(int)
+
+survivalistsFinal.info()
+```
+
+# 3 - Ordinary Least Squares (OLS) Regression
+
+## Model Building (1 Cr.)
+
+```{python}
+#| label: model-building
+
+x = survivalistsFinal.drop('days_lasted_log', axis = 1)
+y = survivalistsFinal['days_lasted_log']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 42)
+x_train_const = sm.add_constant(x_train)
+
+ols_model = sm.OLS(y_train, x_train_const).fit()
+ols_model.summary()
+
+# NO IDEA WHY IT SHOWS THE TITLE 'OLS Regression Results' AFTER HALF OF THE RESULT !!!
+```
+
+Interpretation -
+
+1.  `season` & `result` are the most significant predictors. Later seasons increase the number of days lasted, while worse results decrease the number of days.
+
+2.  `gender` shows some negative effect, which does suggest that *The Boys* may last fewer days, but the result isn't that robust (statistically).
+
+3.  `age`, `medically_evaluated`, and `days_linked_up` show some effects.
+
+### Model Training and Evaluation (2 Cr.)
+
+```{python}
+#| label: model-train-eval
+
+x_test_const = sm.add_constant(x_test)
+x_test_const = x_test_const.reindex(columns = x_train_const.columns, fill_value = 0)
+y_pred = ols_model.predict(x_test_const)
+
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error : {mse}")
+
+r_squared = r2_score(y_test, y_pred)
+print(f"R-Squared : {r_squared}")
+```
+
+Interpretation -
+
+1.  MSE : **0.479**. This metric basically represents the average sq. difference between actual and predicted values. The lower this value, the better. In our case, there are still some errors in the predictions, although it might be a reasonable one given the log transformed scale of our `days_lasted_log`.
+
+2.  R-Squared : **0.501**. This metric basically explains how much was explained by the model. The higher this value, the better. In our case, our model captures half of the variability in the outcome based on the predictors.
+
+## Task 6 - Residual Plots (1 Cr.)
+
+```{python}
+#| label: residual-calc
+
+residuals = y_test - y_pred
+```
+
+```{python}
+#| label: residual-plot
+
+plt.figure(figsize = (8, 6))
+plt.scatter(y_pred, residuals, color = "lime")
+plt.axhline(y = 0, color = 'red', linestyle = '--')
+plt.title('Residual Plot')
+plt.xlabel('Predicted Values')
+plt.ylabel('Residuals')
+plt.show()
+```
+
+## Task 7 - Normality of Residuals (1 Cr.)
+
+```{python}
+#| label: residual-norm-qqplot
+
+residuals_train = ols_model.resid
+
+sm.qqplot(residuals_train, line = '45', fit = True)
+plt.title('Q - Q Plot of Residuals')
+plt.show()
+```
+
+# 4 - Alternative Regressions
+
+### Feature Scaling
+
+```{python}
+#| label: prerun-code
+
+x_train_scaled = scaler.fit_transform(x_train)
+x_test_scaled = scaler.transform(x_test)
+```
+
+```{python}
+#| label: alpha-values
+
+# Defining Alpha Values
+alphas = [0.01, 0.1, 1, 10, 100]
+```
+
+
+## Task 8 - Ridge Regression (2 Cr.)
+
+```{python}
+#| label: ridge-regression
+
+ridge_cv = RidgeCV(alphas = alphas, store_cv_values = True)
+ridge_cv.fit(x_train_scaled, y_train)
+best_alpha_ridge = ridge_cv.alpha_
+
+y_pred_ridge = ridge_cv.predict(x_test_scaled)
+mse_ridge = mean_squared_error(y_test, y_pred_ridge)
+r2_ridge = r2_score(y_test, y_pred_ridge)
+
+print(f"Best λ (alpha)     : {best_alpha_ridge}")
+print(f"Mean Squared Error : {mse_ridge}")
+print(f"R-Squared          : {r2_ridge}")
+```
+
+## OPT Task - Lasso Regression
+
+```{python}
+#| label: lasso-regression
+
+lasso_cv = LassoCV(alphas = alphas, cv = 5)
+lasso_cv.fit(x_train_scaled, y_train)
+best_alpha_lasso = lasso_cv.alpha_
+
+y_pred_lasso = lasso_cv.predict(x_test_scaled)
+mse_lasso = mean_squared_error(y_test, y_pred_lasso)
+r2_lasso = r2_score(y_test, y_pred_lasso)
+
+print(f"Best λ (alpha)     : {best_alpha_lasso}")
+print(f"Mean Squared Error : {mse_lasso}")
+print(f"R-Squared          : {r2_lasso}")
+```
+
+# 5 - Declaration of Independent Work
+
+See **HOMEPAGE** for details

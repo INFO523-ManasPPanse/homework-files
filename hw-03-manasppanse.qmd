@@ -291,3 +291,7 @@ evaluate_model(knn_clf, x_train, y_train)
 It's time to reveal the nominees for this assignment's Oscar for Best Performing Model: LogisticRegression, DecisionTreeClassifier, RandomForestClassifier, AND last but not the least KNeighborsClassifier.
 
 And the Oscar goes to ... **RandomForestClassifier**. 
+
+# 5 - Declaration of Independent Work
+
+See **HOMEPAGE** for details

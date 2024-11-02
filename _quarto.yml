@@ -14,6 +14,8 @@ website:
         href: hw-02-manasppanse.qmd
       - text: "HW - 03"
         href: hw-03-manasppanse.qmd
+      - text: "HW - 04"
+        href: hw-04-manasppanse.qmd
 format:
   html:
     theme: lux

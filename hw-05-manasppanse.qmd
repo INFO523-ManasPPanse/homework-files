@@ -1,0 +1,392 @@
+---
+title: "Clustering Techniques"
+author:
+  - name: "Manas P Panse"
+    affiliation: "College of Information Science, University of Arizona"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+code-annotations: hover
+execute:
+  warning: false
+  messae: false
+  error: false
+toc: true
+---
+
+# 0 - Pre-Checks
+
+```{python}
+#| label: python-version
+
+# Checking Python Version
+
+!python --version
+```
+
+```{python}
+#| label: import-libraries
+
+# Importing Necessary Libraries
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.stats import zscore
+from sklearn.cluster import KMeans
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import calinski_harabasz_score
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+# Setting Plot Style
+sns.set(style = "white")
+```
+
+```{python}
+#| label: import-dataset
+
+# Importing Dataset
+energy_df = pd.read_csv("data/hw-05/owid-energy.csv")
+```
+
+# 1 - Data Preparation
+
+### Data Overview
+
+```{python}
+#| label: df-head
+
+energy_df.head()
+```
+
+```{python}
+#| label: eda
+
+energy_df.info()
+```
+
+#### Shape
+
+The dataset contains **21890** ROWS and **129** COLUMNS.
+
+#### DataTypes
+
+1.  `int64` : 01 column.
+2.  `object` : 02 columns.
+3.  `float64` : 126 columns.
+
+### Descriptive Statistics
+
+```{python}
+#| label: eda-desc-stats
+
+energy_df.describe()
+```
+
+### Handling Missing Values
+
+```{python}
+#| label: pre-check-missing-values
+
+energy_df.isnull().sum()
+```
+
+### Handling duplicate Values
+
+```{python}
+#| label: pre-check-duplicate-values
+
+energy_df.duplicated().sum()
+```
+
+### Column Separations for Future Use
+
+```{python}
+#| label: eda-column-separate
+
+# Numerical Columns
+numeric_cols = energy_df.select_dtypes(include = ['int64', 'float64']).columns
+
+# Categorical Columns
+categoric_cols = energy_df.select_dtypes(include = ['object', 'bool']).columns
+```
+
+### Given Code
+
+```{python}
+#| label: pre1-given-code
+
+# Selecting a subset of columns that are most relevant to Energy Consumption, Production, and Environmental Impact
+relevant_columns = [
+    'country', 'year', 'iso_code', 'population', 'gdp',
+    'biofuel_consumption', 'coal_consumption', 'gas_consumption', 'oil_consumption',
+    'renewables_consumption', 'nuclear_consumption', 'fossil_fuel_consumption', 'low_carbon_consumption',
+    'electricity_generation', 'primary_energy_consumption', 'carbon_intensity_elec',
+    'greenhouse_gas_emissions'
+]
+
+# Creating a new DataFrame with the Relevant Columns
+relevant_df = energy_df[relevant_columns]
+
+# For simplicity, we will fill missing values in consumption and generation columns with zeros, as missing values can logically imply no consumption/production
+consumption_generation_columns = [
+    'biofuel_consumption', 'coal_consumption', 'gas_consumption', 'oil_consumption',
+    'renewables_consumption', 'nuclear_consumption', 'fossil_fuel_consumption', 'low_carbon_consumption',
+    'electricity_generation', 'primary_energy_consumption'
+]
+relevant_df.loc[:, consumption_generation_columns] = relevant_df[consumption_generation_columns].fillna(0)
+
+# Checking if there are any object types that should be converted or other data type corrections
+# Summary of the Cleaned DataFrame
+relevant_df.info()
+```
+
+## Task 1 - Exploratory Data Analysis (2 Cr.)
+
+### Distribution of `primary_energy_consumption`.
+
+```{python}
+#| label: energyconsumption-missing-zero-value
+
+# Checking Missing & Zero Values.
+print("Missing Values :", relevant_df['primary_energy_consumption'].isnull().sum())
+print("Zero Values :", (relevant_df['primary_energy_consumption'] == 0).sum())
+```
+
+```{python}
+#| label: energyconsumption-filter-zero
+
+# Filtering out Zeros for meaningful visualization
+filtered_data = relevant_df['primary_energy_consumption'][relevant_df['primary_energy_consumption'] > 0]
+```
+
+```{python}
+#| label: energyconsumption-hist-plot
+
+# Plotting
+plt.figure(figsize = (8, 6))
+sns.histplot(filtered_data, kde = True, color = "tomato")
+plt.title("Distribution of Primary Energy Consumption (Non-Zero Values)")
+plt.xlabel("Primary Energy Consumption")
+plt.ylabel("Frequency")
+plt.show()
+```
+
+You know I don't mean to sound unprofessional, but above plot looks absolutely hideous. Let's fix that ...
+
+```{python}
+#| label: energyconsumption-log-hist-plot
+
+# Applying Log Transformation excluding Zero Values
+log_consumption = np.log(filtered_data)
+
+# Plotting Log-Transformed Values
+plt.figure(figsize = (8, 6))
+sns.histplot(log_consumption, kde = True, color = "tomato")
+plt.title("Log-Transformed Distribution of Primary Energy Consumption (Non-Zero Values)")
+plt.xlabel("Log of Primary Energy Consumption")
+plt.ylabel("Frequency")
+plt.show()
+```
+
+### Distribution of `electricity_generation`
+
+```{python}
+#| label: elecgen-missing-zero-value
+
+# Checking for Missing and Zero Values
+print("Missing Values :", relevant_df['electricity_generation'].isnull().sum())
+print("Zero Values :", (relevant_df['electricity_generation'] == 0).sum())
+```
+
+```{python}
+#| label: elecgen-filter-zero
+
+# Filtering out Zero for meaningful visualization
+filtered_electricity_gen = relevant_df['electricity_generation'][relevant_df['electricity_generation'] > 0]
+```
+
+```{python}
+#| label: elecgen-hist-plot
+
+# Plotting
+plt.figure(figsize = (8, 6))
+sns.histplot(filtered_electricity_gen, kde = True, color = "orange")
+plt.title("Distribution of Electricity Generation (Non-Zero Values)")
+plt.xlabel("Electricity Generation")
+plt.ylabel("Frequency")
+plt.show()
+```
+
+And again, the hideous-ness continues here ... let's fix that too !
+
+```{python}
+#| label: elecgen-log-hist-plot
+
+# Applying Log Transformation excluding Zero Values
+log_electricity_gen = np.log(filtered_electricity_gen)
+
+# Plotting Log Transformed Values
+plt.figure(figsize = (8, 6))
+sns.histplot(log_electricity_gen, kde = True, color = "orange")
+plt.title("Log-Transformed Distribution of Electricity Generation (Non-Zero Values)")
+plt.xlabel("Log of Electricity Generation")
+plt.ylabel("Frequency")
+plt.show()
+```
+
+### Distribution of `carbon_intensity_elec`
+
+```{python}
+#| label: carbonintense-missing-zero-values
+
+# Checking Missing Values
+print("Missing Values :", relevant_df['carbon_intensity_elec'].isnull().sum())
+print("Zero Values :", (relevant_df['carbon_intensity_elec'] == 0).sum())
+```
+
+```{python}
+#| label: carbonintense-filter
+
+# Filtering Missing & Zero Values
+filtered_carbon_intensity = relevant_df['carbon_intensity_elec'][(relevant_df['carbon_intensity_elec'] > 0)]
+```
+
+```{python}
+#| label: carbonintense-hist-plot
+
+# Plotting
+plt.figure(figsize = (8, 6))
+sns.histplot(filtered_carbon_intensity, kde = True, color = "slategray")
+plt.title("Distribution of Carbon Intensity of Electricity")
+plt.xlabel("Carbon Intensity of Electricity")
+plt.ylabel("Frequency")
+plt.show()
+```
+
+### Coorelation Matrix
+
+```{python}
+#| label: correlation-matrix
+
+# Identifying columns that are in both numeric_cols and relevant_df
+numeric_cols_in_relevant_df = [col for col in numeric_cols if col in relevant_df.columns]
+correlation_matrix = relevant_df[numeric_cols_in_relevant_df].corr()
+
+# Plotting
+plt.figure(figsize = (8, 6))
+sns.heatmap(correlation_matrix, annot = False, cmap = "coolwarm", center = 0, square = True, linewidths = 0.5)
+plt.title("Correlation Matrix of Numerical Features")
+plt.show()
+```
+
+#### Observations from the Heatmap
+
+1.  There are strong correlations among different types of energy consumption and production metrics, as expected. For example, fossil fuel consumption is highly correlated with total primary energy consumption and electricity generation.
+
+2.  Renewable energy consumption shows a positive correlation with low carbon consumption and electricity generation, indicating that countries with higher renewable energy use also tend to have higher overall low carbon energy usage.
+
+3.  Carbon intensity of electricity has correlations with several types of energy consumption, which could inform clustering decisions based on environmental impact considerations.
+
+# 2 - CLustering Methods Implementation and Analysis
+
+## Task 2 - Feature Selection and Data Preparation (2 Cr.)
+
+```{python}
+#| label: feature-selection
+
+# Step 1: Feature Selection - Focus on a mix of Consumption, Production, and Environmental Impact
+features_for_clustering = [
+    'biofuel_consumption', 'coal_consumption', 'gas_consumption', 'oil_consumption',
+    'renewables_consumption', 'nuclear_consumption', 'fossil_fuel_consumption',
+    'low_carbon_consumption', 'electricity_generation', 'primary_energy_consumption',
+    'carbon_intensity_elec'
+]
+```
+
+```{python}
+#| label: editing-carbon-intensity
+
+clustering_df = energy_df[features_for_clustering]
+clustering_df = clustering_df.dropna(subset = ['carbon_intensity_elec'])
+
+# Imputing Missing Values in remaining columns using Mean Strategy
+imputer = SimpleImputer(strategy = 'mean')
+clustering_df_imputed = pd.DataFrame(imputer.fit_transform(clustering_df), columns = clustering_df.columns)
+```
+
+```{python}
+#| label: zscale-norm
+
+# Performing Z-Scale Normalization
+scaler = StandardScaler()
+scaled_clustering_df = pd.DataFrame(
+    scaler.fit_transform(clustering_df_imputed), columns = clustering_df_imputed.columns
+)
+
+# Checking to see if Data is Ready for Clustering
+scaled_clustering_df.isnull().sum()
+```
+
+## Task 3 - KMeans Clustering (4 Cr.)
+
+```{python}
+#| label: kmeans-elbow
+
+# Within-Cluster Sum of Squares
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters = i, init = 'k-means++', random_state = 42)
+    kmeans.fit(scaled_clustering_df)
+    wcss.append(kmeans.inertia_)
+
+# Ploting the Elbow Graph
+plt.figure(figsize = (8, 6))
+plt.plot(range(1, 11), wcss, marker = 'o', linestyle = '--')
+plt.title('Elbow Method for Optimal K')
+plt.xlabel('Number of Clusters')
+plt.ylabel('WCSS')
+plt.show()
+```
+
+```{python}
+#| label: kmeans-cluster
+
+# Applying K-Means with Cluster Count 3
+optimal_k = 3 
+kmeans = KMeans(n_clusters = optimal_k, init = 'k-means++', random_state = 42)
+clustering_df_imputed['Cluster'] = kmeans.fit_predict(scaled_clustering_df)
+
+# Plotting the Cluster
+sns.pairplot(clustering_df_imputed, hue = 'Cluster', palette = 'rainbow', corner = True)
+plt.suptitle('KMeans Clustering Results', fontsize = 25)
+plt.show()
+```
+
+## Task 4 - Hierarchical Clustering (2 Cr.)
+
+```{python}
+#| label: task-4-hierarchical
+
+# Performing Hierarchical Clustering
+linked = linkage(scaled_clustering_df, method = 'ward')
+
+# Plotting a Dendrogram for Cluster Heirarchy
+plt.figure(figsize = (8, 6))
+dendrogram(linked, labels=clustering_df_imputed.index, leaf_rotation = 90, leaf_font_size = 10, no_labels = True)
+plt.title('Dendrogram for Hierarchical Clustering')
+plt.xlabel('Samples')
+plt.ylabel('Euclidean Distances')
+plt.xticks([])
+plt.figtext(0.5, -0.05, 'NOTE: The sample ticks were removed to optimize performace and reduce clutter on screen.', wrap = True, horizontalalignment = 'center', fontsize = 5)
+plt.show()
+```
+
+# 3 - Declaration of Independent Work
+
+See **HOMEPAGE** for details
